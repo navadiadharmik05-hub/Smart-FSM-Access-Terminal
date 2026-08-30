@@ -1,0 +1,6 @@
+﻿# Mock ESP8266 Hardware Server (uses Python stdlib - no pip install needed)
+# Optional extensions:
+# aiohttp>=3.9.0       # async mock server
+# pyserial>=3.5        # real hardware serial comms
+# pytest>=7.4.0        # test runner
+# pytest-html>=4.1.0   # HTML reports

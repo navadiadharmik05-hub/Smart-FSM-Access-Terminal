@@ -1,0 +1,2393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Access Terminal | Hardware FSM Supervisor & Simulator</title>
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    /* =========================================================
+       1. LINEAR / APPLE-INSPIRED DARK ENTERPRISE DESIGN SYSTEM
+       ========================================================= */
+    :root {
+      --bg-base: #0a0c10;
+      --bg-surface: #13171f;
+      --bg-surface-hover: #181d27;
+      --bg-subtle: #0e1218;
+      --border-subtle: #212631;
+      --border-focus: #38bdf8;
+      
+      --text-primary: #f1f5f9;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      
+      --accent-blue: #38bdf8;
+      --accent-blue-dim: rgba(56, 189, 248, 0.1);
+      
+      --status-emerald: #10b981;
+      --status-emerald-dim: rgba(16, 185, 129, 0.12);
+      
+      --status-crimson: #ef4444;
+      --status-crimson-dim: rgba(239, 68, 68, 0.12);
+      
+      --status-amber: #f59e0b;
+      --status-amber-dim: rgba(245, 158, 11, 0.12);
+
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+      
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 14px;
+      
+      --transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-base);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      line-height: 1.5;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Scrollbars */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg-base); }
+    ::-webkit-scrollbar-thumb { background: var(--border-subtle); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+    /* Layout Wrapper */
+    .app-container {
+      max-width: 1280px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 16px 20px 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      flex: 1;
+    }
+
+    /* =========================================================
+       2. TOP NAVIGATION & CONNECTION STRIP
+       ========================================================= */
+    .top-navbar {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 10px 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 14px;
+    }
+
+    .brand-section {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-logo {
+      width: 30px;
+      height: 30px;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent-blue);
+      font-size: 0.95rem;
+      font-weight: 700;
+    }
+
+    .brand-text {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .brand-title {
+      font-size: 0.9rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: var(--text-primary);
+    }
+
+    .brand-subtitle {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+    }
+
+    /* Segmented Tab Switcher */
+    .tab-switcher {
+      display: flex;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 3px;
+      gap: 2px;
+    }
+
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      font-family: var(--font-sans);
+      font-size: 0.78rem;
+      font-weight: 600;
+      padding: 6px 16px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: var(--transition);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .tab-btn:hover { color: var(--text-primary); }
+
+    .tab-btn.active {
+      background: var(--bg-surface);
+      color: var(--accent-blue);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+      border: 1px solid var(--border-subtle);
+    }
+
+    /* Connection Strip */
+    .connection-strip {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .ip-box {
+      display: flex;
+      align-items: center;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      padding: 4px 10px;
+      gap: 6px;
+    }
+
+    .ip-box label {
+      font-size: 0.7rem;
+      font-family: var(--font-mono);
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .ip-box input {
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--text-primary);
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      width: 110px;
+    }
+
+    .connect-btn {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-secondary);
+      font-family: var(--font-sans);
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 6px 12px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .connect-btn:hover {
+      border-color: var(--accent-blue);
+      color: var(--text-primary);
+    }
+
+    .status-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.74rem;
+      font-weight: 600;
+      padding: 5px 10px;
+      border-radius: var(--radius-sm);
+      border: 1px solid;
+    }
+
+    .status-badge.online {
+      background: var(--status-emerald-dim);
+      border-color: rgba(16, 185, 129, 0.3);
+      color: var(--status-emerald);
+    }
+
+    .status-badge.offline {
+      background: var(--status-crimson-dim);
+      border-color: rgba(239, 68, 68, 0.3);
+      color: var(--status-crimson);
+    }
+
+    .status-badge.sim {
+      background: var(--status-amber-dim);
+      border-color: rgba(245, 158, 11, 0.3);
+      color: var(--status-amber);
+    }
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .sound-btn {
+      background: transparent;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      color: var(--text-secondary);
+      padding: 5px 8px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: var(--transition);
+    }
+    .sound-btn:hover { border-color: var(--accent-blue); color: var(--text-primary); }
+
+    /* =========================================================
+       3. GENERAL CARD & CONTAINER STYLES
+       ========================================================= */
+    .tab-content { display: none; }
+    .tab-content.active { display: flex; flex-direction: column; gap: 16px; }
+
+    .card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      position: relative;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .card-title {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .card-meta {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+    }
+
+    /* Telemetry Metrics Bar */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+
+    @media (max-width: 768px) {
+      .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    .metric-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .metric-label {
+      font-size: 0.68rem;
+      font-family: var(--font-mono);
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .metric-value {
+      font-size: 1.15rem;
+      font-family: var(--font-mono);
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    /* =========================================================
+       4. TAB 1: SMART LOCK TERMINAL
+       ========================================================= */
+    .smartlock-grid {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 16px;
+    }
+
+    @media (max-width: 900px) {
+      .smartlock-grid { grid-template-columns: 1fr; }
+    }
+
+    /* Keypad Slot Display */
+    .slot-display-container {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .slots-row {
+      display: flex;
+      gap: 10px;
+    }
+
+    .bit-slot {
+      width: 50px;
+      height: 60px;
+      background: var(--bg-surface);
+      border: 1.5px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-mono);
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      transition: var(--transition);
+    }
+
+    .bit-slot.filled {
+      border-color: var(--accent-blue);
+      color: var(--text-primary);
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.15);
+    }
+
+    .bit-slot.success {
+      border-color: var(--status-emerald);
+      color: var(--status-emerald);
+      box-shadow: 0 0 16px rgba(16, 185, 129, 0.25);
+    }
+
+    .bit-slot.error {
+      border-color: var(--status-crimson);
+      color: var(--status-crimson);
+      box-shadow: 0 0 16px rgba(239, 68, 68, 0.25);
+    }
+
+    .status-text-banner {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-align: center;
+      min-height: 20px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .status-text-banner.granted { color: var(--status-emerald); }
+    .status-text-banner.denied { color: var(--status-crimson); }
+    .status-text-banner.lockout { color: var(--status-amber); }
+
+    /* Keypad Matrix Grid */
+    .keypad-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+
+    .key-btn {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-primary);
+      font-family: var(--font-mono);
+      font-size: 1.25rem;
+      font-weight: 700;
+      padding: 14px;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: var(--transition);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .key-btn:hover {
+      background: var(--bg-surface-hover);
+      border-color: var(--text-secondary);
+      transform: translateY(-1px);
+    }
+
+    .key-btn:active { transform: translateY(1px); }
+
+    .key-btn.action {
+      font-family: var(--font-sans);
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+
+    .key-btn.unlock-btn {
+      background: var(--accent-blue);
+      border-color: var(--accent-blue);
+      color: #05080f;
+      font-weight: 700;
+    }
+
+    .key-btn.unlock-btn:hover {
+      background: #7dd3fc;
+      border-color: #7dd3fc;
+    }
+
+    .key-btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+      transform: none !important;
+      border-color: var(--border-subtle) !important;
+    }
+
+    /* 5-Pip Security Strike Meter */
+    .security-meter {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 10px 14px;
+    }
+
+    .strike-label { font-size: 0.74rem; font-family: var(--font-mono); color: var(--text-muted); }
+    .strike-pips { display: flex; gap: 6px; }
+
+    .pip {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: var(--border-subtle);
+      border: 1px solid var(--border-subtle);
+      transition: var(--transition);
+    }
+
+    .pip.filled {
+      background: var(--status-amber);
+      border-color: var(--status-amber);
+      box-shadow: 0 0 8px rgba(245, 158, 11, 0.4);
+    }
+
+    .pip.critical {
+      background: var(--status-crimson);
+      border-color: var(--status-crimson);
+      box-shadow: 0 0 8px rgba(239, 68, 68, 0.4);
+    }
+
+    .lockout-banner {
+      display: none;
+      background: var(--status-crimson-dim);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      border-radius: var(--radius-md);
+      padding: 12px 16px;
+      color: var(--status-crimson);
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-align: center;
+    }
+
+    .lockout-banner.active {
+      display: block;
+      animation: pulse-lockout 1.2s infinite alternate;
+    }
+
+    @keyframes pulse-lockout {
+      0% { opacity: 0.8; }
+      100% { opacity: 1; box-shadow: 0 0 16px rgba(239, 68, 68, 0.2); }
+    }
+
+    /* Side Panel Hardware Widgets */
+    .side-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .register-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+
+    .reg-cell {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      padding: 10px 6px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .reg-label { font-size: 0.68rem; font-family: var(--font-mono); color: var(--text-muted); font-weight: 600; }
+    .reg-val { font-size: 1.15rem; font-family: var(--font-mono); font-weight: 700; color: var(--text-muted); }
+    .reg-val.active { color: var(--accent-blue); }
+    .reg-val.active.unlocked { color: var(--status-emerald); }
+
+    .bus-indicator-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      padding: 8px 12px;
+      font-size: 0.74rem;
+      font-family: var(--font-mono);
+    }
+
+    .bus-indicator-row .bus-name { color: var(--text-muted); }
+    .bus-indicator-row .bus-val { font-weight: 700; color: var(--status-emerald); }
+    .bus-indicator-row .bus-val.low { color: var(--status-crimson); }
+
+    /* Chassis Tamper Switch Container */
+    .tamper-switch-box {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 10px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .tamper-label {
+      font-size: 0.76rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .toggle-switch {
+      position: relative;
+      width: 44px;
+      height: 22px;
+    }
+
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+
+    .slider-track {
+      position: absolute; cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: var(--border-subtle);
+      transition: .2s; border-radius: 22px;
+    }
+
+    .slider-track:before {
+      position: absolute; content: "";
+      height: 16px; width: 16px; left: 3px; bottom: 3px;
+      background-color: var(--text-muted);
+      transition: .2s; border-radius: 50%;
+    }
+
+    input:checked + .slider-track { background-color: var(--status-crimson); }
+    input:checked + .slider-track:before { transform: translateX(22px); background-color: #fff; }
+
+    .outline-btn {
+      background: transparent;
+      border: 1px solid var(--border-subtle);
+      color: var(--text-secondary);
+      font-family: var(--font-sans);
+      font-size: 0.76rem;
+      font-weight: 600;
+      padding: 7px 12px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: var(--transition);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .outline-btn:hover { border-color: var(--text-muted); color: var(--text-primary); background: var(--bg-subtle); }
+    .outline-btn.danger:hover { border-color: var(--status-crimson); color: var(--status-crimson); background: var(--status-crimson-dim); }
+
+    /* Access Log Drawer */
+    .log-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 14px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .log-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none; }
+
+    .log-console {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      padding: 8px 12px;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      max-height: 120px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .log-entry { display: flex; gap: 8px; color: var(--text-secondary); }
+    .log-entry .time { color: var(--text-muted); min-width: 65px; }
+    .log-entry.granted .msg { color: var(--status-emerald); }
+    .log-entry.denied .msg { color: var(--status-crimson); }
+    .log-entry.system .msg { color: var(--accent-blue); }
+    .log-entry.warn .msg { color: var(--status-amber); }
+
+    /* =========================================================
+       5. TAB 2: LAB FSM SIMULATOR & GATE LOGIC MONITOR
+       ========================================================= */
+    .sim-layout-grid {
+      display: grid;
+      grid-template-columns: 1.25fr 0.75fr;
+      gap: 16px;
+    }
+
+    @media (max-width: 1000px) {
+      .sim-layout-grid { grid-template-columns: 1fr; }
+    }
+
+    .canvas-container {
+      width: 100%; height: 320px;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      position: relative;
+    }
+
+    canvas#simGraphCanvas { width: 100%; height: 100%; display: block; }
+
+    /* Bit Stream Injector Control Bar */
+    .injector-bar {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+
+    .injector-controls-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+    .stream-input-box {
+      flex: 1; min-width: 160px;
+      display: flex; background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      padding: 4px 8px;
+    }
+
+    .stream-input-box input {
+      background: transparent; border: none; outline: none;
+      color: var(--text-primary); font-family: var(--font-mono);
+      font-size: 0.85rem; width: 100%; letter-spacing: 2px;
+    }
+
+    .preset-chips { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+
+    .chip-btn {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-secondary);
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      padding: 4px 8px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    .chip-btn:hover { color: var(--accent-blue); border-color: var(--accent-blue); }
+
+    /* Gate Logic Monitor Card */
+    .gate-logic-card {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .gate-equations-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+
+    .gate-eq-box {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-family: var(--font-mono);
+      font-size: 0.74rem;
+    }
+
+    .eq-label { color: var(--text-muted); font-size: 0.66rem; font-weight: 600; }
+    .eq-formula { color: var(--text-secondary); font-weight: 600; }
+    .eq-eval { color: var(--accent-blue); font-weight: 700; font-size: 0.85rem; }
+    .eq-eval.high { color: var(--status-emerald); }
+    .eq-eval.low { color: var(--text-muted); }
+
+    /* 5-Channel Oscilloscope */
+    .scope-canvas-box {
+      width: 100%; height: 180px;
+      background: #06080b;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      position: relative;
+    }
+
+    canvas#scopeCanvas { width: 100%; height: 100%; display: block; }
+
+    /* Excitation Truth Table */
+    .truth-table-scroll {
+      max-height: 240px; overflow-y: auto;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+    }
+
+    .sim-table {
+      width: 100%; border-collapse: collapse;
+      font-family: var(--font-mono); font-size: 0.72rem; text-align: center;
+    }
+
+    .sim-table th {
+      background: var(--bg-subtle); position: sticky; top: 0;
+      padding: 6px 4px; color: var(--text-muted);
+      border-bottom: 1px solid var(--border-subtle); font-weight: 600;
+    }
+
+    .sim-table td {
+      padding: 5px 4px; border-bottom: 1px solid rgba(33, 38, 49, 0.6);
+      color: var(--text-secondary);
+    }
+
+    .sim-table tr.active-row { background: var(--accent-blue-dim) !important; }
+    .sim-table tr.active-row td { color: var(--accent-blue); font-weight: 700; }
+
+    .text-link {
+      background: transparent; border: none; color: var(--accent-blue);
+      font-family: var(--font-sans); font-size: 0.78rem; font-weight: 600;
+      cursor: pointer; text-decoration: underline; text-underline-offset: 3px;
+    }
+
+    /* =========================================================
+       6. CHASSIS TAMPER / MASTER LOCKOUT RECOVERY MODAL
+       ========================================================= */
+    .modal-backdrop {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      background: rgba(10, 12, 16, 0.88);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      z-index: 99999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.25s;
+    }
+
+    .modal-backdrop.active {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+    }
+
+    .modal-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--status-crimson);
+      border-radius: var(--radius-lg);
+      padding: 28px;
+      max-width: 520px;
+      width: 92%;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      box-shadow: 0 20px 60px rgba(239, 68, 68, 0.3);
+      transform: scale(0.95);
+      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      animation: alert-border-pulse 1.5s infinite alternate;
+    }
+
+    @keyframes alert-border-pulse {
+      0% { box-shadow: 0 0 20px rgba(239, 68, 68, 0.2); }
+      100% { box-shadow: 0 0 40px rgba(239, 68, 68, 0.5); }
+    }
+
+    .modal-backdrop.active .modal-card {
+      transform: scale(1);
+    }
+
+    .modal-header { display: flex; justify-content: space-between; align-items: center; }
+    .modal-title { font-size: 0.95rem; font-weight: 700; color: var(--status-crimson); }
+    .modal-subtitle { font-size: 0.78rem; color: var(--text-secondary); line-height: 1.4; }
+
+    .form-group { display: flex; flex-direction: column; gap: 8px; }
+    .challenge-question-label {
+      font-size: 0.76rem;
+      font-family: var(--font-mono);
+      color: var(--text-primary);
+      font-weight: 600;
+      line-height: 1.45;
+    }
+
+    /* MCQ Option Cards */
+    .mcq-options-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 6px;
+    }
+
+    .mcq-option-card {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .mcq-option-card:hover {
+      background: var(--bg-surface-hover);
+      border-color: var(--accent-blue);
+    }
+
+    .mcq-option-card input[type="radio"] {
+      accent-color: var(--accent-blue);
+      width: 15px;
+      height: 15px;
+      cursor: pointer;
+    }
+
+    .mcq-text {
+      font-size: 0.78rem;
+      font-family: var(--font-mono);
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+
+    .mcq-option-card:has(input:checked) {
+      border-color: var(--accent-blue);
+      background: var(--accent-blue-dim);
+    }
+
+    .mcq-option-card:has(input:checked) .mcq-text {
+      color: var(--accent-blue);
+      font-weight: 700;
+    }
+
+    .modal-error-msg {
+      display: none;
+      font-size: 0.74rem;
+      font-family: var(--font-mono);
+      color: var(--status-crimson);
+      font-weight: 600;
+      margin-top: 4px;
+    }
+
+    .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 4px; }
+    .btn-solid {
+      background: var(--status-crimson);
+      border: none;
+      color: #fff;
+      font-family: var(--font-sans);
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 10px 18px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    .btn-solid:hover { opacity: 0.9; }
+  </style>
+</head>
+<body>
+
+<div class="app-container">
+
+  <!-- =========================================================
+       TOP NAVIGATION BAR & CONNECTION STRIP
+       ========================================================= -->
+  <header class="top-navbar">
+    <div class="brand-section">
+      <div class="brand-logo">⚡</div>
+      <div class="brand-text">
+        <span class="brand-title">Smart Access Terminal</span>
+        <span class="brand-subtitle">Hardware FSM Supervisor & Combinational Gate Monitor</span>
+      </div>
+    </div>
+
+    <!-- Segmented Tab Switcher -->
+    <div class="tab-switcher">
+      <button class="tab-btn active" id="tabBtnSmartLock" onclick="app.switchTab('smartlock')">
+        🔒 Smart Lock Terminal
+      </button>
+      <button class="tab-btn" id="tabBtnSimulator" onclick="app.switchTab('simulator')">
+        🔬 Lab FSM Simulator
+      </button>
+    </div>
+
+    <!-- Connection Strip -->
+    <div class="connection-strip">
+      <div class="ip-box">
+        <label for="espIpInput">IP</label>
+        <input type="text" id="espIpInput" value="192.168.4.1" placeholder="192.168.4.1">
+      </div>
+      <button class="connect-btn" id="btnConnect" onclick="app.testConnection()">Connect</button>
+
+      <div class="status-badge offline" id="connectionStatusBadge">
+        <span class="status-dot"></span>
+        <span id="connectionStatusText">Offline</span>
+      </div>
+
+      <button class="sound-btn" id="soundToggleBtn" onclick="app.toggleSound()" title="Sound Feedback">🔊</button>
+    </div>
+  </header>
+
+  <!-- =========================================================
+       TAB 1: SMART LOCK TERMINAL (PRIMARY WORKFLOW)
+       ========================================================= -->
+  <main class="tab-content active" id="tabSmartLock">
+    
+    <!-- Real-Time Telemetry & Access Metrics Bar -->
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <span class="metric-label">Access Success Rate</span>
+        <span class="metric-value" id="metricSuccessRate" style="color:var(--status-emerald)">100%</span>
+      </div>
+      <div class="metric-card">
+        <span class="metric-label">Total Injected Bits</span>
+        <span class="metric-value" id="metricTotalBits" style="color:var(--accent-blue)">0</span>
+      </div>
+      <div class="metric-card">
+        <span class="metric-label">Clock Edge Latency</span>
+        <span class="metric-value" id="metricLatency">&lt; 1.8 ms</span>
+      </div>
+      <div class="metric-card">
+        <span class="metric-label">Solenoid State</span>
+        <span class="metric-value" id="metricSolenoid" style="color:var(--text-muted)">LOCKED</span>
+      </div>
+    </div>
+
+    <div class="smartlock-grid">
+      
+      <!-- Central Access Keypad Card -->
+      <section class="card">
+        <div class="card-header">
+          <span class="card-title">Access Keypad</span>
+          <span class="card-meta">4-Bit Synchronous Serial Stream</span>
+        </div>
+
+        <!-- 4-Bit Slot Display Screen -->
+        <div class="slot-display-container">
+          <div class="slots-row">
+            <div class="bit-slot" id="slot0">—</div>
+            <div class="bit-slot" id="slot1">—</div>
+            <div class="bit-slot" id="slot2">—</div>
+            <div class="bit-slot" id="slot3">—</div>
+          </div>
+          
+          <div class="status-text-banner" id="statusMessage">
+            System Armed — Ready for input
+          </div>
+        </div>
+
+        <!-- Tactile Keypad Matrix Grid -->
+        <div class="keypad-grid">
+          <button class="key-btn" id="key0" onclick="app.pressDigit(0)">0</button>
+          <button class="key-btn" id="key1" onclick="app.pressDigit(1)">1</button>
+          <button class="key-btn action" id="keyClear" onclick="app.clearBuffer()">CLEAR</button>
+          <button class="key-btn unlock-btn" id="btnUnlock" onclick="app.submitSequence()">UNLOCK</button>
+        </div>
+
+        <!-- 5-Pip Security Strike Meter -->
+        <div class="security-meter">
+          <span class="strike-label">Security Interlock (5 Pips):</span>
+          <div class="strike-pips">
+            <div class="pip" id="pip1"></div>
+            <div class="pip" id="pip2"></div>
+            <div class="pip" id="pip3"></div>
+            <div class="pip" id="pip4"></div>
+            <div class="pip" id="pip5"></div>
+          </div>
+        </div>
+
+        <!-- Active Lockout / Tamper Banner -->
+        <div class="lockout-banner" id="lockoutBanner">
+          ⚠ Cooldown Mode Active: <span id="cooldownSecs">30</span>s (/CLR Grounded)
+        </div>
+      </section>
+
+      <!-- Side Panel: Hardware Status & Chassis Tamper Guard -->
+      <aside class="side-panel">
+        
+        <!-- Hardware State Registers Card -->
+        <section class="card">
+          <div class="card-header">
+            <span class="card-title">Hardware Status</span>
+            <span class="card-meta">74HC74 Registers</span>
+          </div>
+
+          <!-- Register Array (Q0 - Q3) -->
+          <div class="register-grid">
+            <div class="reg-cell">
+              <span class="reg-label">Q0</span>
+              <span class="reg-val" id="regQ0">0</span>
+            </div>
+            <div class="reg-cell">
+              <span class="reg-label">Q1</span>
+              <span class="reg-val" id="regQ1">0</span>
+            </div>
+            <div class="reg-cell">
+              <span class="reg-label">Q2</span>
+              <span class="reg-val" id="regQ2">0</span>
+            </div>
+            <div class="reg-cell">
+              <span class="reg-label">Q3 (Z)</span>
+              <span class="reg-val" id="regQ3">0</span>
+            </div>
+          </div>
+
+          <!-- Active-LOW /CLR Bus Line -->
+          <div class="bus-indicator-row">
+            <span class="bus-name">/CLR Bus Line:</span>
+            <span class="bus-val" id="clrBusStatus">HIGH (3.3V)</span>
+          </div>
+
+          <div class="bus-indicator-row">
+            <span class="bus-name">Unlock Solenoid (Z):</span>
+            <span class="bus-val" id="zOutputStatus" style="color:var(--text-muted)">0 (LOCKED)</span>
+          </div>
+
+        </section>
+
+      </aside>
+
+    </div>
+
+    <!-- Access Event Log Drawer -->
+    <section class="log-card">
+      <div class="log-header" onclick="app.toggleLogDrawer()">
+        <span class="card-title">Activity Audit Trail</span>
+        <div style="display:flex; gap:10px;">
+          <button class="text-link" style="font-size:0.72rem;" onclick="event.stopPropagation(); app.exportLog()">Export</button>
+          <button class="text-link" style="font-size:0.72rem;" onclick="event.stopPropagation(); app.clearLog()">Clear</button>
+        </div>
+      </div>
+      <div class="log-console" id="logConsole">
+        <!-- Log entries populated dynamically -->
+      </div>
+    </section>
+
+  </main>
+
+  <!-- =========================================================
+       TAB 2: LAB FSM SIMULATOR & GATE LOGIC MONITOR
+       ========================================================= -->
+  <main class="tab-content" id="tabSimulator">
+    
+    <div class="sim-layout-grid">
+      
+      <!-- LEFT COLUMN: FSM Graph + Logic Analyzer Scope + Controls -->
+      <div style="display:flex; flex-direction:column; gap:16px;">
+        
+        <!-- FSM Canvas State Machine Diagram -->
+        <section class="card">
+          <div class="card-header">
+            <span class="card-title">FSM State Transition Graph</span>
+            <span class="card-meta">Hardwired Pattern: 1011</span>
+          </div>
+
+          <div class="canvas-container">
+            <canvas id="simGraphCanvas"></canvas>
+          </div>
+
+          <!-- Bit Stream Injector Bar -->
+          <div class="injector-bar">
+            <div class="injector-controls-row">
+              <button class="outline-btn" onclick="app.stepBit(0)">Clock '0'</button>
+              <button class="outline-btn" onclick="app.stepBit(1)">Clock '1'</button>
+              <button class="outline-btn danger" onclick="app.resetFSMState()">Reset (S0)</button>
+
+              <div class="stream-input-box">
+                <input type="text" id="streamInput" value="1011011001011" placeholder="Enter bitstream e.g. 1011...">
+              </div>
+
+              <button class="outline-btn" id="btnRunStream" style="color:var(--accent-blue); border-color:var(--accent-blue)" onclick="app.toggleStreamRunner()">
+                ▶ Run Stream
+              </button>
+            </div>
+
+            <!-- Quick Presets -->
+            <div class="preset-chips">
+              <span style="font-size:0.68rem; font-family:var(--font-mono); color:var(--text-muted)">Presets:</span>
+              <button class="chip-btn" onclick="app.loadPreset('1011')">Target (1011)</button>
+              <button class="chip-btn" onclick="app.loadPreset('1011011')">Overlapping (1011011)</button>
+              <button class="chip-btn" onclick="app.loadPreset('10101011')">False Prefix (10101011)</button>
+              <button class="chip-btn" onclick="app.loadPreset('1110')">Duress Alert (1110)</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- 5-Channel Logic Analyzer Oscilloscope -->
+        <section class="card">
+          <div class="card-header">
+            <span class="card-title">5-Channel Digital Logic Analyzer</span>
+            <div style="display:flex; gap:10px;">
+              <button class="text-link" style="font-size:0.72rem;" onclick="app.exportScopePNG()">📷 PNG</button>
+              <button class="text-link" style="font-size:0.72rem;" onclick="app.exportScopeCSV()">📄 CSV</button>
+            </div>
+          </div>
+
+          <div class="scope-canvas-box">
+            <canvas id="scopeCanvas"></canvas>
+          </div>
+        </section>
+
+      </div>
+
+      <!-- RIGHT COLUMN: Combinational Gate Monitor + Truth Table -->
+      <div style="display:flex; flex-direction:column; gap:16px;">
+        
+        <!-- Live Combinational Gate Logic Monitor (74HC08 & 74HC04) -->
+        <section class="card gate-logic-card">
+          <div class="card-header">
+            <span class="card-title">Combinational Gate Logic Monitor</span>
+            <span class="card-meta">74HC08 AND + 74HC04 NOT</span>
+          </div>
+
+          <div class="gate-equations-grid">
+            <div class="gate-eq-box">
+              <span class="eq-label">D0 EXCITATION</span>
+              <span class="eq-formula">X · ~Q1 · ~Q2 · ~Q3</span>
+              <span class="eq-eval" id="evalD0">D0 = 0</span>
+            </div>
+            <div class="gate-eq-box">
+              <span class="eq-label">D1 EXCITATION</span>
+              <span class="eq-formula">Q0 · ~X</span>
+              <span class="eq-eval" id="evalD1">D1 = 0</span>
+            </div>
+            <div class="gate-eq-box">
+              <span class="eq-label">D2 EXCITATION</span>
+              <span class="eq-formula">Q1 · X</span>
+              <span class="eq-eval" id="evalD2">D2 = 0</span>
+            </div>
+            <div class="gate-eq-box">
+              <span class="eq-label">D3 EXCITATION</span>
+              <span class="eq-formula">Q2 · X</span>
+              <span class="eq-eval" id="evalD3">D3 = 0</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Excitation Truth Table -->
+        <section class="card">
+          <div class="card-header">
+            <span class="card-title">Excitation Truth Table</span>
+            <span class="card-meta">One-Hot State Vector</span>
+          </div>
+
+          <div class="truth-table-scroll">
+            <table class="sim-table" id="simTruthTable">
+              <thead>
+                <tr>
+                  <th>PS</th>
+                  <th>Vector</th>
+                  <th>Bit</th>
+                  <th>NS</th>
+                  <th>Next Vector</th>
+                  <th>Z</th>
+                </tr>
+              </thead>
+              <tbody id="simTruthTableBody">
+                <!-- Populated dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+      </div>
+
+    </div>
+
+  </main>
+
+</div>
+
+<!-- =========================================================
+     CHASSIS TAMPER / MASTER LOCKOUT RECOVERY MODAL
+     ========================================================= -->
+<div class="modal-backdrop" id="securityQuestionModal">
+  <div class="modal-card">
+    <div class="modal-header">
+      <span class="modal-title">🚨 CRITICAL SECURITY ALERT: CHASSIS TAMPER DETECTED</span>
+    </div>
+
+    <p class="modal-subtitle">
+      Terminal permanently locked due to 5 consecutive unauthorized access violations. Physical bus lines grounded (/CLR=GND).
+    </p>
+
+    <div class="form-group">
+      <label class="challenge-question-label">
+        Hardware Verification Challenge: Which 74-series integrated circuit provides the logic inverter (NOT gate) for sequence detection on this terminal?
+      </label>
+
+      <div class="mcq-options-grid">
+        <label class="mcq-option-card">
+          <input type="radio" name="mcqIcAnswer" value="A">
+          <span class="mcq-text">A) 74HC08 (Quad 2-Input AND Gate)</span>
+        </label>
+
+        <label class="mcq-option-card">
+          <input type="radio" name="mcqIcAnswer" value="B">
+          <span class="mcq-text">B) 74HC04 (Hex Inverter)</span>
+        </label>
+
+        <label class="mcq-option-card">
+          <input type="radio" name="mcqIcAnswer" value="C">
+          <span class="mcq-text">C) 74HC74 (Dual D-Type Flip-Flop)</span>
+        </label>
+
+        <label class="mcq-option-card">
+          <input type="radio" name="mcqIcAnswer" value="D">
+          <span class="mcq-text">D) 74HC32 (Quad 2-Input OR Gate)</span>
+        </label>
+      </div>
+
+      <span class="modal-error-msg" id="secErrorMsg">ACCESS REJECTED: Incorrect IC selected. Chassis Tamper Lockout remains active.</span>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-solid" onclick="app.submitSecurityAnswer()">Authorize & Clear Tamper</button>
+    </div>
+  </div>
+</div>
+
+<!-- =========================================================
+     JAVASCRIPT: DETERMINISTIC SMART TERMINAL CONTROLLER
+     ========================================================= -->
+<script>
+/**
+ * Synthesized Web Audio Feedback
+ */
+class SoundFeedback {
+  constructor() {
+    this.ctx = null;
+    this.enabled = true;
+  }
+
+  init() {
+    if (!this.ctx) {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (AudioCtx) this.ctx = new AudioCtx();
+    }
+  }
+
+  tick() {
+    if (!this.enabled) return;
+    this.init();
+    if (!this.ctx) return;
+    try {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(600, this.ctx.currentTime);
+      gain.gain.setValueAtTime(0.04, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.03);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start();
+      osc.stop(this.ctx.currentTime + 0.03);
+    } catch(e){}
+  }
+
+  success() {
+    if (!this.enabled) return;
+    this.init();
+    if (!this.ctx) return;
+    try {
+      const now = this.ctx.currentTime;
+      [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, now + i * 0.07);
+        gain.gain.setValueAtTime(0.06, now + i * 0.07);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.07 + 0.18);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now + i * 0.07);
+        osc.stop(now + i * 0.07 + 0.18);
+      });
+    } catch(e){}
+  }
+
+  denied() {
+    if (!this.enabled) return;
+    this.init();
+    if (!this.ctx) return;
+    try {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(200, this.ctx.currentTime);
+      gain.gain.setValueAtTime(0.08, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.2);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start();
+      osc.stop(this.ctx.currentTime + 0.2);
+    } catch(e){}
+  }
+
+  alarm() {
+    if (!this.enabled) return;
+    this.init();
+    if (!this.ctx) return;
+    try {
+      const now = this.ctx.currentTime;
+      [880, 440, 880, 440].forEach((freq, i) => {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(freq, now + i * 0.12);
+        gain.gain.setValueAtTime(0.1, now + i * 0.12);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.12 + 0.1);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now + i * 0.12);
+        osc.stop(now + i * 0.12 + 0.1);
+      });
+    } catch(e){}
+  }
+}
+
+/**
+ * Interactive FSM State Graph Canvas Renderer
+ */
+class StateGraphRenderer {
+  constructor(canvasId) {
+    this.canvas = document.getElementById(canvasId);
+    this.ctx = this.canvas.getContext('2d');
+    this.nodeRadius = 24;
+    this.nodes = {};
+
+    this.resizeObserver = new ResizeObserver(() => this.resize());
+    if (this.canvas.parentElement) {
+      this.resizeObserver.observe(this.canvas.parentElement);
+    }
+    this.resize();
+  }
+
+  resize() {
+    const rect = this.canvas.parentElement.getBoundingClientRect();
+    this.canvas.width = rect.width * window.devicePixelRatio;
+    this.canvas.height = rect.height * window.devicePixelRatio;
+    this.ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+    this.width = rect.width;
+    this.height = rect.height;
+    this.render();
+  }
+
+  render(activeState = 0) {
+    const ctx = this.ctx;
+    const w = this.width;
+    const h = this.height;
+    const target = "1011";
+    ctx.clearRect(0, 0, w, h);
+
+    this.nodes = {
+      0: { x: w * 0.12, y: h * 0.52, label: 'S0', sub: 'Idle' },
+      1: { x: w * 0.31, y: h * 0.28, label: 'S1', sub: 'Got 1' },
+      2: { x: w * 0.50, y: h * 0.52, label: 'S2', sub: 'Got 10' },
+      3: { x: w * 0.69, y: h * 0.28, label: 'S3', sub: 'Got 101' },
+      4: { x: w * 0.88, y: h * 0.52, label: 'S4', sub: 'UNLOCKED' }
+    };
+
+    // Draw Forward Arcs
+    ctx.strokeStyle = '#212631';
+    ctx.lineWidth = 2;
+    for (let i = 0; i < 4; i++) {
+      const p1 = this.nodes[i];
+      const p2 = this.nodes[i+1];
+      const bit = target[i];
+
+      const isMatching = (activeState === i + 1);
+      ctx.strokeStyle = isMatching ? '#38bdf8' : '#212631';
+      ctx.lineWidth = isMatching ? 2.5 : 1.5;
+
+      ctx.beginPath();
+      ctx.moveTo(p1.x, p1.y);
+      ctx.lineTo(p2.x, p2.y);
+      ctx.stroke();
+
+      const mx = (p1.x + p2.x) / 2;
+      const my = (p1.y + p2.y) / 2 - 8;
+      ctx.fillStyle = isMatching ? '#38bdf8' : '#64748b';
+      ctx.font = 'bold 10px "JetBrains Mono"';
+      ctx.textAlign = 'center';
+      ctx.fillText(`X=${bit}`, mx, my);
+    }
+
+    // Draw Loopback Arcs
+    ctx.strokeStyle = 'rgba(33, 38, 49, 0.8)';
+    ctx.lineWidth = 1;
+    [1, 2, 3, 4].forEach(from => {
+      const pFrom = this.nodes[from];
+      const pTo = this.nodes[0];
+      ctx.beginPath();
+      ctx.moveTo(pFrom.x, pFrom.y + this.nodeRadius);
+      ctx.quadraticCurveTo((pFrom.x + pTo.x) / 2, h * 0.92, pTo.x, pTo.y + this.nodeRadius);
+      ctx.stroke();
+    });
+
+    // Draw Nodes
+    for (let i = 0; i <= 4; i++) {
+      const node = this.nodes[i];
+      const isCurrent = (activeState === i);
+
+      ctx.save();
+      if (isCurrent) {
+        ctx.beginPath();
+        ctx.arc(node.x, node.y, this.nodeRadius + 6, 0, Math.PI * 2);
+        ctx.fillStyle = (i === 4) ? 'rgba(16, 185, 129, 0.15)' : 'rgba(56, 189, 248, 0.15)';
+        ctx.fill();
+      }
+
+      ctx.beginPath();
+      ctx.arc(node.x, node.y, this.nodeRadius, 0, Math.PI * 2);
+      ctx.fillStyle = isCurrent ? '#181d27' : '#13171f';
+      ctx.fill();
+
+      ctx.lineWidth = isCurrent ? 2.5 : 1.5;
+      ctx.strokeStyle = isCurrent ? (i === 4 ? '#10b981' : '#38bdf8') : '#212631';
+      ctx.stroke();
+
+      ctx.fillStyle = isCurrent ? '#f1f5f9' : '#94a3b8';
+      ctx.font = 'bold 11px "JetBrains Mono"';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(node.label, node.x, node.y - 3);
+
+      ctx.font = '8px "Inter"';
+      ctx.fillStyle = isCurrent ? (i === 4 ? '#10b981' : '#38bdf8') : '#64748b';
+      ctx.fillText(node.sub, node.x, node.y + 9);
+      ctx.restore();
+    }
+  }
+}
+
+/**
+ * 5-Channel Oscilloscope
+ */
+class LogicOscilloscope {
+  constructor(canvasId) {
+    this.canvas = document.getElementById(canvasId);
+    this.ctx = this.canvas.getContext('2d');
+    this.history = [];
+    this.maxPoints = 40;
+
+    this.resizeObserver = new ResizeObserver(() => this.resize());
+    if (this.canvas.parentElement) {
+      this.resizeObserver.observe(this.canvas.parentElement);
+    }
+    this.resize();
+  }
+
+  resize() {
+    const rect = this.canvas.parentElement.getBoundingClientRect();
+    this.canvas.width = rect.width * window.devicePixelRatio;
+    this.canvas.height = rect.height * window.devicePixelRatio;
+    this.ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+    this.width = rect.width;
+    this.height = rect.height;
+    this.render();
+  }
+
+  pushSample(clk, dataX, q0, q1, q2, q3, clr) {
+    this.history.push({ clk, dataX, q0, q1, q2, q3, clr });
+    if (this.history.length > this.maxPoints) {
+      this.history.shift();
+    }
+    this.render();
+  }
+
+  render() {
+    const ctx = this.ctx;
+    const w = this.width;
+    const h = this.height;
+    ctx.clearRect(0, 0, w, h);
+
+    const channels = [
+      { name: 'CLK', key: 'clk', color: '#38bdf8' },
+      { name: 'DATA (X)', key: 'dataX', color: '#f59e0b' },
+      { name: 'Q0..Q2', key: 'qState', color: '#94a3b8' },
+      { name: 'Q3 (Z)', key: 'q3', color: '#10b981' },
+      { name: '/CLR', key: 'clr', color: '#ef4444' }
+    ];
+
+    const chHeight = h / channels.length;
+
+    channels.forEach((ch, idx) => {
+      const topY = idx * chHeight;
+      const botY = topY + chHeight;
+
+      ctx.strokeStyle = '#181d27';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(0, botY);
+      ctx.lineTo(w, botY);
+      ctx.stroke();
+
+      ctx.fillStyle = ch.color;
+      ctx.font = 'bold 9px "JetBrains Mono"';
+      ctx.textAlign = 'left';
+      ctx.fillText(ch.name, 8, topY + 14);
+
+      if (this.history.length < 2) return;
+
+      const stepX = (w - 70) / (this.maxPoints - 1);
+      const startX = 70;
+
+      ctx.strokeStyle = ch.color;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+
+      for (let i = 0; i < this.history.length; i++) {
+        const pt = this.history[i];
+        let val = (ch.key === 'qState') ? ((pt.q0 || pt.q1 || pt.q2) ? 1 : 0) : (pt[ch.key] ? 1 : 0);
+        const x = startX + i * stepX;
+        const y = val ? (topY + 6) : (botY - 6);
+
+        if (i === 0) {
+          ctx.moveTo(x, y);
+        } else {
+          const prevPt = this.history[i-1];
+          let prevVal = (ch.key === 'qState') ? ((prevPt.q0 || prevPt.q1 || prevPt.q2) ? 1 : 0) : (prevPt[ch.key] ? 1 : 0);
+          const prevY = prevVal ? (topY + 6) : (botY - 6);
+          if (val !== prevVal) ctx.lineTo(x, prevY);
+          ctx.lineTo(x, y);
+        }
+      }
+      ctx.stroke();
+    });
+  }
+}
+
+/**
+ * Master Application Controller
+ */
+class SmartLockApp {
+  constructor() {
+    this.activeTarget = "1011";
+    this.currentMode = "smartlock";
+    this.isOnline = false;
+
+    this.inputBuffer = [];
+    this.currentState = 0;
+    this.flipFlops = [0, 0, 0, 0]; // [Q3, Q2, Q1, Q0]
+    this.outputZ = 0;
+
+    this.strikes = 0; // 5-strike total capacity
+    this.isCooldownActive = false;
+    this.cooldownSeconds = 0;
+    this.cooldownTimer = null;
+
+    this.isTampered = false; // Tier-2 Chassis Tamper permanent lock
+
+    this.isRunningStream = false;
+    this.streamTimer = null;
+    this.streamIndex = 0;
+
+    // Telemetry & Access Metrics
+    this.totalBitsClocked = 0;
+    this.attemptCount = 0;
+    this.unlockCount = 0;
+
+    this.sound = new SoundFeedback();
+  }
+
+  init() {
+    this.graphRenderer = new StateGraphRenderer('simGraphCanvas');
+    this.oscilloscope = new LogicOscilloscope('scopeCanvas');
+
+    this.populateTruthTable();
+    this.updateDisplaySlots();
+    this.updateHardwareUI();
+    this.updateGateLogicMonitor(0);
+
+    this.oscilloscope.pushSample(0, 0, 0, 0, 0, 0, 1);
+    this.log('Smart Access Terminal Initialized. System Armed.', 'system');
+    this.testConnection();
+  }
+
+  switchTab(tabName) {
+    this.currentMode = tabName;
+    document.getElementById('tabBtnSmartLock').className = (tabName === 'smartlock') ? 'tab-btn active' : 'tab-btn';
+    document.getElementById('tabBtnSimulator').className = (tabName === 'simulator') ? 'tab-btn active' : 'tab-btn';
+
+    document.getElementById('tabSmartLock').className = (tabName === 'smartlock') ? 'tab-content active' : 'tab-content';
+    document.getElementById('tabSimulator').className = (tabName === 'simulator') ? 'tab-content active' : 'tab-content';
+
+    if (tabName === 'simulator') {
+      this.graphRenderer.resize();
+      this.oscilloscope.resize();
+      this.graphRenderer.render(this.currentState);
+      this.updateStatusBadge('sim', 'Simulator Active');
+    } else {
+      this.testConnection();
+    }
+  }
+
+  toggleSound() {
+    this.sound.enabled = !this.sound.enabled;
+    document.getElementById('soundToggleBtn').innerText = this.sound.enabled ? '🔊' : '🔇';
+  }
+
+  getEspIp() {
+    const input = document.getElementById('espIpInput');
+    return input ? input.value.trim() : '192.168.4.1';
+  }
+
+  updateStatusBadge(status, label) {
+    const badge = document.getElementById('connectionStatusBadge');
+    const txt = document.getElementById('connectionStatusText');
+    if (!badge || !txt) return;
+
+    badge.className = `status-badge ${status}`;
+    txt.innerText = label;
+  }
+
+  async testConnection() {
+    if (this.currentMode === 'simulator') {
+      this.updateStatusBadge('sim', 'Simulator Active');
+      return;
+    }
+
+    const espIp = this.getEspIp();
+    this.updateStatusBadge('sim', 'Connecting...');
+
+    try {
+      const res = await fetch(`http://${espIp}/status`, {
+        method: 'GET',
+        signal: AbortSignal.timeout(1500)
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        this.isOnline = true;
+        this.updateStatusBadge('online', '● Online');
+        if (data.isTampered) {
+          this.toggleTamper(true);
+        }
+      } else {
+        throw new Error(`HTTP ${res.status}`);
+      }
+    } catch (err) {
+      this.isOnline = false;
+      this.updateStatusBadge('offline', '○ Offline');
+    }
+  }
+
+  setKeypadDisabled(disabled) {
+    ['key0', 'key1', 'keyClear', 'btnUnlock'].forEach(id => {
+      const btn = document.getElementById(id);
+      if (btn) btn.disabled = disabled;
+    });
+  }
+
+  pressDigit(bit) {
+    if (this.isCooldownActive || this.isTampered) return;
+    if (this.inputBuffer.length >= 4) return;
+
+    this.inputBuffer.push(bit);
+    this.sound.tick();
+    this.updateDisplaySlots();
+
+    if (this.inputBuffer.length === 4) {
+      document.getElementById('statusMessage').innerText = 'Press UNLOCK to verify';
+      document.getElementById('statusMessage').className = 'status-text-banner';
+    }
+  }
+
+  clearBuffer() {
+    if (this.isCooldownActive || this.isTampered) return;
+    this.inputBuffer = [];
+    this.sound.tick();
+    this.updateDisplaySlots();
+
+    const statusMsg = document.getElementById('statusMessage');
+    if (this.strikes === 3) {
+      statusMsg.innerText = 'Cooldown Elapsed — 2 Attempts Remaining Before Chassis Lockout';
+      statusMsg.className = 'status-text-banner lockout';
+    } else {
+      statusMsg.innerText = 'System Armed — Ready for input';
+      statusMsg.className = 'status-text-banner';
+    }
+  }
+
+  updateDisplaySlots(statusClass = null) {
+    for (let i = 0; i < 4; i++) {
+      const slot = document.getElementById(`slot${i}`);
+      if (i < this.inputBuffer.length) {
+        slot.innerText = this.inputBuffer[i];
+        slot.className = `bit-slot filled ${statusClass || ''}`;
+      } else {
+        slot.innerText = '—';
+        slot.className = `bit-slot ${statusClass || ''}`;
+      }
+    }
+  }
+
+  async submitSequence() {
+    if (this.isCooldownActive || this.isTampered || this.inputBuffer.length !== 4) return;
+
+    const bitstream = this.inputBuffer.join('');
+    const statusMsg = document.getElementById('statusMessage');
+    statusMsg.innerText = 'Verifying Hardware...';
+    statusMsg.className = 'status-text-banner';
+
+    if (this.isOnline && this.currentMode === 'smartlock') {
+      try {
+        const espIp = this.getEspIp();
+        const res = await fetch(`http://${espIp}/inject?code=${bitstream}`, {
+          method: 'POST',
+          signal: AbortSignal.timeout(2500)
+        });
+        if (res.ok) {
+          const json = await res.json();
+          this.handleVerdict(json.hardwareResult === 'UNLOCKED' || json.status === 'UNLOCKED', bitstream);
+          return;
+        }
+      } catch (err) {
+        this.log(`Hardware fetch failed (${err.message}). Local fallback active.`, 'warn');
+      }
+    }
+
+    this.resetFSMState();
+    for (let b of this.inputBuffer) {
+      this.evaluateBit(b);
+    }
+
+    const isMatch = (this.currentState === 4);
+    this.handleVerdict(isMatch, bitstream);
+  }
+
+  evaluateBit(bit) {
+    if (this.isTampered) return;
+
+    this.totalBitsClocked++;
+    const b = parseInt(bit);
+    const fromState = this.currentState;
+    const expected = parseInt(this.activeTarget[this.currentState]);
+
+    this.oscilloscope.pushSample(1, b, this.flipFlops[3], this.flipFlops[2], this.flipFlops[1], this.flipFlops[0], 1);
+
+    if (b === expected) {
+      this.currentState++;
+    } else {
+      this.currentState = (b === parseInt(this.activeTarget[0])) ? 1 : 0;
+    }
+
+    switch (this.currentState) {
+      case 1: this.flipFlops = [0, 0, 0, 1]; break;
+      case 2: this.flipFlops = [0, 0, 1, 0]; break;
+      case 3: this.flipFlops = [0, 1, 0, 0]; break;
+      case 4: this.flipFlops = [1, 0, 0, 0]; break;
+      default: this.flipFlops = [0, 0, 0, 0]; break;
+    }
+
+    this.outputZ = (this.currentState === 4) ? 1 : 0;
+
+    this.oscilloscope.pushSample(0, b, this.flipFlops[3], this.flipFlops[2], this.flipFlops[1], this.flipFlops[0], 1);
+
+    this.updateHardwareUI();
+    this.updateGateLogicMonitor(b);
+    this.updateTelemetryMetrics();
+    this.graphRenderer.render(this.currentState);
+    this.highlightTruthTableRow(fromState, b);
+  }
+
+  updateTelemetryMetrics() {
+    const bitsEl = document.getElementById('metricTotalBits');
+    const rateEl = document.getElementById('metricSuccessRate');
+    const solEl = document.getElementById('metricSolenoid');
+
+    if (bitsEl) bitsEl.innerText = this.totalBitsClocked;
+    if (rateEl) {
+      const rate = this.attemptCount > 0 ? ((this.unlockCount / this.attemptCount) * 100).toFixed(0) : 100;
+      rateEl.innerText = `${rate}%`;
+    }
+    if (solEl) {
+      solEl.innerText = this.outputZ ? 'UNLOCKED' : 'LOCKED';
+      solEl.style.color = this.outputZ ? 'var(--status-emerald)' : 'var(--text-muted)';
+    }
+  }
+
+  exportScopePNG() {
+    const canvas = document.getElementById('scopeCanvas');
+    if (!canvas) return;
+    const url = canvas.toDataURL('image/png');
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `logic_analyzer_waveform_${Date.now()}.png`;
+    a.click();
+    this.log('Oscilloscope Waveform exported as PNG image.', 'system');
+  }
+
+  exportScopeCSV() {
+    let csv = "Index,CLK,DATA_X,Q_STATE,Q3_Z,CLR\n";
+    this.oscilloscope.history.forEach((pt, i) => {
+      const qState = (pt.q0 || pt.q1 || pt.q2) ? 1 : 0;
+      csv += `${i+1},${pt.clk ? 1:0},${pt.dataX ? 1:0},${qState},${pt.q3 ? 1:0},${pt.clr ? 1:0}\n`;
+    });
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `waveform_data_${Date.now()}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    this.log('Logic Analyzer Waveform exported as CSV dataset.', 'system');
+  }
+
+  updateGateLogicMonitor(currentBit) {
+    const [q3, q2, q1, q0] = this.flipFlops;
+    const x = currentBit;
+    const notX = x ? 0 : 1;
+    const notQ1 = q1 ? 0 : 1;
+    const notQ2 = q2 ? 0 : 1;
+    const notQ3 = q3 ? 0 : 1;
+
+    const d0 = x && notQ1 && notQ2 && notQ3 ? 1 : 0;
+    const d1 = q0 && notX ? 1 : 0;
+    const d2 = q1 && x ? 1 : 0;
+    const d3 = q2 && x ? 1 : 0;
+
+    const setEval = (id, val) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.innerText = `${id.replace('eval','')} = ${val}`;
+      el.className = val ? 'eq-eval high' : 'eq-eval low';
+    };
+
+    setEval('evalD0', d0);
+    setEval('evalD1', d1);
+    setEval('evalD2', d2);
+    setEval('evalD3', d3);
+  }
+
+  handleVerdict(isUnlocked, bitstream) {
+    const statusMsg = document.getElementById('statusMessage');
+    this.attemptCount++;
+
+    if (isUnlocked) {
+      this.unlockCount++;
+      this.strikes = 0;
+      this.sound.success();
+      this.updatePips();
+      this.updateDisplaySlots('success');
+      this.updateTelemetryMetrics();
+
+      statusMsg.innerText = '✓ Access Granted — Solenoid Unlocked';
+      statusMsg.className = 'status-text-banner granted';
+
+      this.log(`Injected: ${bitstream} — Result: ACCESS GRANTED (Q3=HIGH)`, 'granted');
+
+      setTimeout(() => {
+        this.clearBuffer();
+        this.resetFSMState();
+      }, 2500);
+    } else {
+      this.sound.denied();
+      this.strikes++;
+      this.updatePips();
+      this.updateDisplaySlots('error');
+      this.updateTelemetryMetrics();
+
+      if (this.strikes === 3) {
+        this.triggerTier1Cooldown();
+      } else if (this.strikes === 4) {
+        statusMsg.innerText = `✗ Access Denied — Final Attempt (4/5)`;
+        statusMsg.className = 'status-text-banner denied';
+        this.log(`Injected: ${bitstream} — Result: ACCESS DENIED (Strike 4/5 - Critical Zone)`, 'denied');
+
+        setTimeout(() => {
+          this.clearBuffer();
+          this.resetFSMState();
+        }, 1500);
+      } else if (this.strikes >= 5) {
+        this.triggerTier2ChassisTamperLockout();
+      } else {
+        statusMsg.innerText = `✗ Access Denied — Attempt ${this.strikes}/5`;
+        statusMsg.className = 'status-text-banner denied';
+        this.log(`Injected: ${bitstream} — Result: ACCESS DENIED (Strike ${this.strikes}/5)`, 'denied');
+
+        setTimeout(() => {
+          this.clearBuffer();
+          this.resetFSMState();
+        }, 1500);
+      }
+    }
+  }
+
+  // TIER 1: 30-Second Cooldown Mode (Strike 3)
+  triggerTier1Cooldown() {
+    this.isCooldownActive = true;
+    this.cooldownSeconds = 30;
+    this.setKeypadDisabled(true);
+
+    const banner = document.getElementById('lockoutBanner');
+    const statusMsg = document.getElementById('statusMessage');
+    const clrStatus = document.getElementById('clrBusStatus');
+
+    if (clrStatus) {
+      clrStatus.innerText = 'LOW (0V / RESET)';
+      clrStatus.className = 'bus-val low';
+    }
+
+    this.resetFSMState();
+    this.oscilloscope.pushSample(0, 0, 0, 0, 0, 0, 0); // /CLR=0
+
+    this.log('⚠ TIER-1 LOCKOUT: 3 Consecutive Failures. 30s Cooldown Engaged (/CLR=GND).', 'warn');
+
+    if (this.isOnline) {
+      fetch(`http://${this.getEspIp()}/reset`, { method: 'POST' }).catch(() => {});
+    }
+
+    const updateUI = () => {
+      if (banner) {
+        banner.innerText = `⚠ Cooldown Mode Active: ${this.cooldownSeconds}s (/CLR Grounded)`;
+        banner.className = 'lockout-banner active';
+      }
+      if (statusMsg) {
+        statusMsg.innerText = `⚠ Cooldown Active (${this.cooldownSeconds}s remaining)`;
+        statusMsg.className = 'status-text-banner lockout';
+      }
+    };
+
+    updateUI();
+
+    clearInterval(this.cooldownTimer);
+    this.cooldownTimer = setInterval(() => {
+      this.cooldownSeconds--;
+      if (this.cooldownSeconds <= 0) {
+        clearInterval(this.cooldownTimer);
+        this.isCooldownActive = false;
+        this.setKeypadDisabled(false);
+
+        // DO NOT reset strike count to 0 (Keep strikes at 3!)
+        this.updatePips();
+
+        if (banner) banner.className = 'lockout-banner';
+        if (statusMsg) {
+          statusMsg.innerText = 'Cooldown Elapsed — 2 Attempts Remaining Before Chassis Lockout';
+          statusMsg.className = 'status-text-banner lockout';
+        }
+        if (clrStatus) {
+          clrStatus.innerText = 'HIGH (3.3V)';
+          clrStatus.className = 'bus-val';
+        }
+
+        this.clearBuffer();
+        this.resetFSMState();
+        this.log('Cooldown Elapsed. System re-armed with 2 attempts remaining.', 'system');
+      } else {
+        updateUI();
+      }
+    }, 1000);
+  }
+
+  // TIER 2: Permanent Chassis Tamper Lockout (Strike 5)
+  triggerTier2ChassisTamperLockout() {
+    this.isTampered = true;
+    this.setKeypadDisabled(true);
+
+    const tamperToggle = document.getElementById('tamperToggle');
+    if (tamperToggle) tamperToggle.checked = true;
+
+    const banner = document.getElementById('lockoutBanner');
+    const statusMsg = document.getElementById('statusMessage');
+    const clrStatus = document.getElementById('clrBusStatus');
+
+    if (banner) {
+      banner.innerText = '🚨 CRITICAL ALERT: CHASSIS TAMPER DETECTED — SYSTEM ISOLATED (/CLR=GND)';
+      banner.className = 'lockout-banner active';
+    }
+    if (statusMsg) {
+      statusMsg.innerText = '🚨 Chassis Tamper Lockout Engaged (5/5 Violations)';
+      statusMsg.className = 'status-text-banner lockout';
+    }
+    if (clrStatus) {
+      clrStatus.innerText = 'LOW (0V / CHASSIS TAMPER)';
+      clrStatus.className = 'bus-val low';
+    }
+
+    this.resetFSMState();
+    this.oscilloscope.pushSample(0, 0, 0, 0, 0, 0, 0);
+
+    this.sound.alarm();
+    this.log('CRITICAL ALERT: Chassis Tamper Lockout engaged. 5/5 violations reached. Master administrative intervention required.', 'denied');
+
+    if (this.isOnline) {
+      fetch(`http://${this.getEspIp()}/tamper?active=1`, { method: 'POST' }).catch(() => {});
+    }
+
+    this.openSecurityModal();
+  }
+
+  openSecurityModal() {
+    const err = document.getElementById('secErrorMsg');
+    if (err) err.style.display = 'none';
+
+    // Reset radio selection
+    document.querySelectorAll('input[name="mcqIcAnswer"]').forEach(r => r.checked = false);
+
+    const modal = document.getElementById('securityQuestionModal');
+    if (modal) modal.classList.add('active');
+  }
+
+  closeSecurityModal() {
+    const modal = document.getElementById('securityQuestionModal');
+    if (modal) modal.classList.remove('active');
+  }
+
+  submitSecurityAnswer() {
+    const selected = document.querySelector('input[name="mcqIcAnswer"]:checked');
+    const err = document.getElementById('secErrorMsg');
+
+    if (!selected) {
+      if (err) {
+        err.style.display = 'block';
+        err.innerText = 'Please select an IC option to authorize.';
+      }
+      return;
+    }
+
+    // Option B: 74HC04 (Hex Inverter) is the correct answer
+    if (selected.value === 'B') {
+      this.isTampered = false;
+      this.isCooldownActive = false;
+      this.strikes = 0;
+      this.updatePips();
+      this.setKeypadDisabled(false);
+
+      const tamperToggle = document.getElementById('tamperToggle');
+      if (tamperToggle) tamperToggle.checked = false;
+
+      const banner = document.getElementById('lockoutBanner');
+      const statusMsg = document.getElementById('statusMessage');
+      const clrStatus = document.getElementById('clrBusStatus');
+
+      if (banner) banner.className = 'lockout-banner';
+      if (statusMsg) {
+        statusMsg.innerText = 'System Armed — Ready for input';
+        statusMsg.className = 'status-text-banner';
+      }
+      if (clrStatus) {
+        clrStatus.innerText = 'HIGH (3.3V)';
+        clrStatus.className = 'bus-val';
+      }
+
+      this.clearBuffer();
+      this.resetFSMState();
+      this.closeSecurityModal();
+
+      this.log('Security Override: Chassis Tamper cleared via Hardware Verification Challenge (74HC04 confirmed).', 'granted');
+
+      if (this.isOnline) {
+        fetch(`http://${this.getEspIp()}/tamper?active=0`, { method: 'POST' }).catch(() => {});
+      }
+    } else {
+      this.sound.denied();
+      if (err) {
+        err.style.display = 'block';
+        err.innerText = 'ACCESS REJECTED: Incorrect IC selected. Chassis Tamper Lockout remains active.';
+      }
+      this.log('Security Verification Failed: Incorrect IC selected.', 'warn');
+    }
+  }
+
+  // Industrial Chassis Tamper Interlock Toggle Handler
+  toggleTamper(active) {
+    this.isTampered = active;
+    const statusMsg = document.getElementById('statusMessage');
+    const banner = document.getElementById('lockoutBanner');
+    const clrStatus = document.getElementById('clrBusStatus');
+
+    if (active) {
+      this.setKeypadDisabled(true);
+      if (clrStatus) {
+        clrStatus.innerText = 'LOW (0V / CHASSIS TAMPER)';
+        clrStatus.className = 'bus-val low';
+      }
+      if (banner) {
+        banner.innerText = '🚨 CHASSIS TAMPER DETECTED — SYSTEM ISOLATED (/CLR=GND)';
+        banner.className = 'lockout-banner active';
+      }
+      if (statusMsg) {
+        statusMsg.innerText = '⚠ Chassis Intrusion — Hardware Locked';
+        statusMsg.className = 'status-text-banner lockout';
+      }
+
+      this.resetFSMState();
+      this.oscilloscope.pushSample(0, 0, 0, 0, 0, 0, 0);
+      this.log('🚨 CHASSIS TAMPER INTERLOCK ACTIVATED (GPIO13 LOW). System Isolated.', 'denied');
+
+      if (this.isOnline) {
+        fetch(`http://${this.getEspIp()}/tamper?active=1`, { method: 'POST' }).catch(() => {});
+      }
+    } else {
+      this.setKeypadDisabled(false);
+      if (clrStatus) {
+        clrStatus.innerText = 'HIGH (3.3V)';
+        clrStatus.className = 'bus-val';
+      }
+      if (banner) banner.className = 'lockout-banner';
+      if (statusMsg) {
+        statusMsg.innerText = 'System Armed — Ready for input';
+        statusMsg.className = 'status-text-banner';
+      }
+
+      this.log('Chassis Safety Restored. /CLR re-armed.', 'system');
+
+      if (this.isOnline) {
+        fetch(`http://${this.getEspIp()}/tamper?active=0`, { method: 'POST' }).catch(() => {});
+      }
+    }
+  }
+
+  updatePips() {
+    for (let i = 1; i <= 5; i++) {
+      const pip = document.getElementById(`pip${i}`);
+      if (pip) {
+        if (this.strikes >= i) {
+          pip.className = (i >= 4) ? 'pip critical' : 'pip filled';
+        } else {
+          pip.className = 'pip';
+        }
+      }
+    }
+  }
+
+  updateHardwareUI() {
+    const [q3, q2, q1, q0] = this.flipFlops;
+    const setReg = (id, val, isUnlocked) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.innerText = val;
+      el.className = val ? (isUnlocked ? 'reg-val active unlocked' : 'reg-val active') : 'reg-val';
+    };
+
+    setReg('regQ0', q0, false);
+    setReg('regQ1', q1, false);
+    setReg('regQ2', q2, false);
+    setReg('regQ3', q3, true);
+
+    const zStatus = document.getElementById('zOutputStatus');
+    if (zStatus) {
+      if (this.outputZ) {
+        zStatus.innerText = '1 (UNLOCKED)';
+        zStatus.style.color = 'var(--status-emerald)';
+      } else {
+        zStatus.innerText = '0 (LOCKED)';
+        zStatus.style.color = 'var(--text-muted)';
+      }
+    }
+  }
+
+  resetFSMState() {
+    this.currentState = 0;
+    this.flipFlops = [0, 0, 0, 0];
+    this.outputZ = 0;
+    this.updateHardwareUI();
+    this.updateGateLogicMonitor(0);
+    this.graphRenderer.render(0);
+    this.oscilloscope.pushSample(0, 0, 0, 0, 0, 0, 1);
+  }
+
+  stepBit(bit) {
+    if (this.isTampered) return;
+    this.sound.tick();
+    this.evaluateBit(bit);
+    this.log(`Simulator Clocked: Bit=${bit} → State: S${this.currentState} (Z=${this.outputZ})`, 'system');
+  }
+
+  loadPreset(stream) {
+    document.getElementById('streamInput').value = stream;
+  }
+
+  toggleStreamRunner() {
+    const btn = document.getElementById('btnRunStream');
+    if (this.isRunningStream) {
+      clearInterval(this.streamTimer);
+      this.isRunningStream = false;
+      btn.innerText = '▶ Run Stream';
+      btn.style.color = 'var(--accent-blue)';
+    } else {
+      const stream = document.getElementById('streamInput').value.trim();
+      if (!stream) return;
+
+      this.isRunningStream = true;
+      btn.innerText = '⏸ Pause';
+      btn.style.color = 'var(--status-amber)';
+      this.streamIndex = 0;
+
+      this.streamTimer = setInterval(() => {
+        if (this.streamIndex >= stream.length) {
+          clearInterval(this.streamTimer);
+          this.isRunningStream = false;
+          btn.innerText = '▶ Run Stream';
+          btn.style.color = 'var(--accent-blue)';
+          return;
+        }
+
+        const b = stream[this.streamIndex];
+        this.stepBit(b);
+        this.streamIndex++;
+      }, 400);
+    }
+  }
+
+  populateTruthTable() {
+    const tbody = document.getElementById('simTruthTableBody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    const stateEnc = ['0000', '0001', '0010', '0100', '1000'];
+
+    for (let s = 0; s <= 4; s++) {
+      [0, 1].forEach(b => {
+        let nextS = 0;
+        if (s === 4) {
+          nextS = (b === 1) ? 1 : 0;
+        } else {
+          const prefix = this.activeTarget.substring(0, s) + b;
+          for (let len = Math.min(4, prefix.length); len >= 1; len--) {
+            if (this.activeTarget.startsWith(prefix.substring(prefix.length - len))) {
+              nextS = len;
+              break;
+            }
+          }
+        }
+
+        const tr = document.createElement('tr');
+        tr.id = `truthRow_${s}_${b}`;
+        tr.innerHTML = `
+          <td>S${s}</td>
+          <td>${stateEnc[s]}</td>
+          <td>${b}</td>
+          <td>S${nextS}</td>
+          <td>${stateEnc[nextS]}</td>
+          <td>${nextS === 4 ? '1' : '0'}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+  }
+
+  highlightTruthTableRow(fromState, bit) {
+    document.querySelectorAll('#simTruthTableBody tr').forEach(r => r.className = '');
+    const row = document.getElementById(`truthRow_${fromState}_${bit}`);
+    if (row) row.className = 'active-row';
+  }
+
+  log(msg, type = 'normal') {
+    const consoleEl = document.getElementById('logConsole');
+    if (!consoleEl) return;
+
+    const now = new Date();
+    const time = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}:${now.getSeconds().toString().padStart(2,'0')}`;
+
+    const div = document.createElement('div');
+    div.className = `log-entry ${type}`;
+    div.innerHTML = `<span class="time">${time}</span><span class="msg">${msg}</span>`;
+
+    consoleEl.appendChild(div);
+    consoleEl.scrollTop = consoleEl.scrollHeight;
+  }
+
+  clearLog() {
+    document.getElementById('logConsole').innerHTML = '';
+  }
+
+  exportLog() {
+    const lines = Array.from(document.querySelectorAll('#logConsole .log-entry'))
+      .map(e => e.innerText)
+      .join('\n');
+    const blob = new Blob([lines], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `smartlock_audit_${Date.now()}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  toggleLogDrawer() {
+    const c = document.getElementById('logConsole');
+    c.style.display = (c.style.display === 'none') ? 'flex' : 'none';
+  }
+}
+
+let app = null;
+document.addEventListener('DOMContentLoaded', () => {
+  app = new SmartLockApp();
+  app.init();
+});
+</script>
+</body>
+</html>

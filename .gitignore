@@ -1,0 +1,48 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+*.log
+package-lock.json
+
+# Arduino / PlatformIO
+.pio/
+.pioenvs/
+*.elf
+*.bin
+*.hex
+.build/
+
+# OS Files
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*~
+
+# IDE / Editors
+.vscode/
+.idea/
+
+# Environment
+.env
+.env.local
+
+# Large demo videos (use Git LFS)
+*.mp4
+*.avi
+*.mov
