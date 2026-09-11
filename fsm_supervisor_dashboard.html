@@ -581,51 +581,6 @@
     .bus-indicator-row .bus-val { font-weight: 700; color: var(--status-emerald); }
     .bus-indicator-row .bus-val.low { color: var(--status-crimson); }
 
-    /* Chassis Tamper Switch Container */
-    .tamper-switch-box {
-      background: var(--bg-subtle);
-      border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-md);
-      padding: 10px 14px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .tamper-label {
-      font-size: 0.76rem;
-      font-weight: 600;
-      color: var(--text-secondary);
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .toggle-switch {
-      position: relative;
-      width: 44px;
-      height: 22px;
-    }
-
-    .toggle-switch input { opacity: 0; width: 0; height: 0; }
-
-    .slider-track {
-      position: absolute; cursor: pointer;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background-color: var(--border-subtle);
-      transition: .2s; border-radius: 22px;
-    }
-
-    .slider-track:before {
-      position: absolute; content: "";
-      height: 16px; width: 16px; left: 3px; bottom: 3px;
-      background-color: var(--text-muted);
-      transition: .2s; border-radius: 50%;
-    }
-
-    input:checked + .slider-track { background-color: var(--status-crimson); }
-    input:checked + .slider-track:before { transform: translateX(22px); background-color: #fff; }
-
     .outline-btn {
       background: transparent;
       border: 1px solid var(--border-subtle);
@@ -818,7 +773,7 @@
     }
 
     /* =========================================================
-       6. CHASSIS TAMPER / MASTER LOCKOUT RECOVERY MODAL
+       6. MODALS SYSTEM (PRE-ACCESS AUTH & CHASSIS RECOVERY)
        ========================================================= */
     .modal-backdrop {
       position: fixed;
@@ -873,6 +828,44 @@
     .modal-subtitle { font-size: 0.78rem; color: var(--text-secondary); line-height: 1.4; }
 
     .form-group { display: flex; flex-direction: column; gap: 8px; }
+    .form-group label {
+      font-size: 0.74rem;
+      font-family: var(--font-mono);
+      color: var(--text-muted);
+      font-weight: 600;
+      line-height: 1.4;
+    }
+
+    .form-group input[type="text"],
+    .form-group input[type="tel"] {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      font-family: var(--font-mono);
+      font-size: 0.88rem;
+      padding: 10px 14px;
+      outline: none;
+      transition: var(--transition);
+    }
+
+    .form-group input:focus { border-color: var(--accent-blue); }
+
+    .custom-select {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      font-size: 0.85rem;
+      padding: 10px 14px;
+      outline: none;
+      transition: var(--transition);
+      cursor: pointer;
+    }
+
+    .custom-select:focus { border-color: var(--accent-blue); }
+
     .challenge-question-label {
       font-size: 0.76rem;
       font-family: var(--font-mono);
@@ -1072,7 +1065,7 @@
         </div>
       </section>
 
-      <!-- Side Panel: Hardware Status & Chassis Tamper Guard -->
+      <!-- Side Panel: Hardware Status -->
       <aside class="side-panel">
         
         <!-- Hardware State Registers Card -->
@@ -1112,7 +1105,6 @@
             <span class="bus-name">Unlock Solenoid (Z):</span>
             <span class="bus-val" id="zOutputStatus" style="color:var(--text-muted)">0 (LOCKED)</span>
           </div>
-
         </section>
 
       </aside>
@@ -1269,6 +1261,61 @@
 </div>
 
 <!-- =========================================================
+     OPERATOR IDENTITY GATEWAY MODAL (INITIAL SCREEN)
+     ========================================================= -->
+<div class="modal-backdrop active" id="operatorAuthModal">
+  <div class="modal-card" style="border-color: var(--accent-blue); animation: none; box-shadow: 0 20px 60px rgba(56, 189, 248, 0.25);">
+    <div class="modal-header">
+      <span class="modal-title" style="color: var(--accent-blue); display: flex; align-items: center; gap: 8px;">
+        🛡 Operator Identity Verification
+      </span>
+    </div>
+
+    <p class="modal-subtitle">
+      System Armed. Please authenticate your identity and purpose of access to initialize the terminal interface:
+    </p>
+
+    <div class="form-group">
+      <label for="opFullName">OPERATOR FULL NAME (Letters Only)</label>
+      <input type="text" id="opFullName" placeholder="e.g. Dharmik Navadia" maxlength="50" onkeydown="if(event.key==='Enter') app.authenticateOperator()" required>
+    </div>
+
+    <div class="form-group">
+      <label for="opMobileBadge">MOBILE NUMBER / BADGE ID (10 Digits Only)</label>
+      <input 
+        type="tel" 
+        id="opMobileBadge" 
+        placeholder="e.g. 9876543210" 
+        maxlength="10" 
+        minlength="10" 
+        inputmode="numeric" 
+        oninput="this.value = this.value.replace(/\D/g, '').slice(0, 10)" 
+        onkeydown="if(event.key==='Enter') app.authenticateOperator()" 
+        required
+      >
+    </div>
+
+    <div class="form-group">
+      <label for="opAccessPurpose">PURPOSE OF ACCESS</label>
+      <select id="opAccessPurpose" class="custom-select">
+        <option value="Routine Inspection">Routine Inspection</option>
+        <option value="Hardware Maintenance">Hardware Maintenance</option>
+        <option value="Emergency Bypass">Emergency Bypass</option>
+        <option value="Academic Demonstration" selected>Academic Demonstration</option>
+      </select>
+    </div>
+
+    <span class="modal-error-msg" id="opAuthErrorMsg">Please complete all required fields.</span>
+
+    <div class="modal-actions" style="margin-top: 6px;">
+      <button class="btn-solid" style="background: var(--accent-blue); color: #05080f;" onclick="app.authenticateOperator()">
+        Authenticate & Initialize Terminal
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- =========================================================
      CHASSIS TAMPER / MASTER LOCKOUT RECOVERY MODAL
      ========================================================= -->
 <div class="modal-backdrop" id="securityQuestionModal">
@@ -1321,6 +1368,18 @@
      JAVASCRIPT: DETERMINISTIC SMART TERMINAL CONTROLLER
      ========================================================= -->
 <script>
+/**
+ * Global Configuration & Session State
+ */
+const WEB3FORMS_ACCESS_KEY = "f3c82fa4-ebdc-4e7b-9107-14bbaf53f4a3";
+
+let currentOperator = {
+  name: "Anonymous",
+  mobile: "Unknown",
+  purpose: "Unassigned",
+  loginTime: null
+};
+
 /**
  * Synthesized Web Audio Feedback
  */
@@ -1671,7 +1730,65 @@ class SmartLockApp {
     this.updateGateLogicMonitor(0);
 
     this.oscilloscope.pushSample(0, 0, 0, 0, 0, 0, 1);
-    this.log('Smart Access Terminal Initialized. System Armed.', 'system');
+    this.setKeypadDisabled(true);
+
+    // Prompt Operator Authentication Modal on launch
+    const authModal = document.getElementById('operatorAuthModal');
+    if (authModal) authModal.classList.add('active');
+
+    this.testConnection();
+  }
+
+  authenticateOperator() {
+    const nameInput = document.getElementById('opFullName');
+    const mobileInput = document.getElementById('opMobileBadge');
+    const purposeSelect = document.getElementById('opAccessPurpose');
+    const errorMsg = document.getElementById('opAuthErrorMsg');
+
+    const name = nameInput ? nameInput.value.trim() : '';
+    const mobile = mobileInput ? mobileInput.value.trim() : '';
+    const purpose = purposeSelect ? purposeSelect.value : 'Academic Demonstration';
+
+    // Strict validation constraints: exactly 10 numeric digits
+    const nameRegex = /^[a-zA-Z\s]{2,50}$/;
+    const mobileRegex = /^\d{10}$/;
+
+    if (!nameRegex.test(name)) {
+      if (errorMsg) {
+        errorMsg.style.display = 'block';
+        errorMsg.innerText = 'Invalid Full Name: Use letters and spaces only (at least 2 characters).';
+      }
+      this.sound.denied();
+      if (nameInput) nameInput.focus();
+      return;
+    }
+
+    if (!mobileRegex.test(mobile)) {
+      if (errorMsg) {
+        errorMsg.style.display = 'block';
+        errorMsg.innerText = 'Invalid Mobile Number: Must be exactly 10 digits.';
+      }
+      this.sound.denied();
+      if (mobileInput) mobileInput.focus();
+      return;
+    }
+
+    const now = new Date();
+    const timestamp = `${now.toLocaleDateString()} ${now.toLocaleTimeString()}`;
+
+    currentOperator = {
+      name: name,
+      mobile: mobile,
+      purpose: purpose,
+      loginTime: timestamp
+    };
+
+    const modal = document.getElementById('operatorAuthModal');
+    if (modal) modal.classList.remove('active');
+
+    this.sound.success();
+    this.log(`Operator Authenticated: ${currentOperator.name} (${currentOperator.mobile}) — Purpose: ${currentOperator.purpose}`, 'granted');
+
     this.testConnection();
   }
 
@@ -1720,6 +1837,7 @@ class SmartLockApp {
 
     const espIp = this.getEspIp();
     this.updateStatusBadge('sim', 'Connecting...');
+    const statusMsg = document.getElementById('statusMessage');
 
     try {
       const res = await fetch(`http://${espIp}/status`, {
@@ -1731,6 +1849,15 @@ class SmartLockApp {
         const data = await res.json();
         this.isOnline = true;
         this.updateStatusBadge('online', '● Online');
+
+        if (!this.isCooldownActive && !this.isTampered) {
+          this.setKeypadDisabled(false);
+          if (statusMsg && (statusMsg.innerText.includes('Hardware Disconnected') || statusMsg.innerText.includes('System Armed'))) {
+            statusMsg.innerText = 'Hardware Online — Ready for Keypad Input';
+            statusMsg.className = 'status-text-banner';
+          }
+        }
+
         if (data.isTampered) {
           this.toggleTamper(true);
         }
@@ -1740,6 +1867,13 @@ class SmartLockApp {
     } catch (err) {
       this.isOnline = false;
       this.updateStatusBadge('offline', '○ Offline');
+
+      // Lock hardware keypad on Tab 1 when disconnected
+      this.setKeypadDisabled(true);
+      if (statusMsg && !this.isCooldownActive && !this.isTampered) {
+        statusMsg.innerText = '⚠ Hardware Disconnected — Connect ESP8266 or Switch to Lab FSM Simulator';
+        statusMsg.className = 'status-text-banner lockout';
+      }
     }
   }
 
@@ -1751,6 +1885,15 @@ class SmartLockApp {
   }
 
   pressDigit(bit) {
+    if (!this.isOnline && this.currentMode === 'smartlock') {
+      const statusMsg = document.getElementById('statusMessage');
+      if (statusMsg) {
+        statusMsg.innerText = '⚠ Keypad Disabled: Hardware Disconnected. Please use Lab FSM Simulator.';
+        statusMsg.className = 'status-text-banner lockout';
+      }
+      this.sound.denied();
+      return;
+    }
     if (this.isCooldownActive || this.isTampered) return;
     if (this.inputBuffer.length >= 4) return;
 
@@ -2057,9 +2200,6 @@ class SmartLockApp {
     this.isTampered = true;
     this.setKeypadDisabled(true);
 
-    const tamperToggle = document.getElementById('tamperToggle');
-    if (tamperToggle) tamperToggle.checked = true;
-
     const banner = document.getElementById('lockoutBanner');
     const statusMsg = document.getElementById('statusMessage');
     const clrStatus = document.getElementById('clrBusStatus');
@@ -2087,14 +2227,50 @@ class SmartLockApp {
       fetch(`http://${this.getEspIp()}/tamper?active=1`, { method: 'POST' }).catch(() => {});
     }
 
+    // Trigger automated Web3Forms Intrusion Alert dispatch
+    this.sendWeb3FormsAlert();
+
     this.openSecurityModal();
+  }
+
+  async sendWeb3FormsAlert() {
+    if (!WEB3FORMS_ACCESS_KEY || WEB3FORMS_ACCESS_KEY === "YOUR_WEB3FORMS_ACCESS_KEY") {
+      this.log('Web3Forms Notice: WEB3FORMS_ACCESS_KEY placeholder present (Set key to enable live email dispatch).', 'warn');
+      return;
+    }
+
+    try {
+      const response = await fetch("https://api.web3forms.com/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Accept": "application/json" },
+        body: JSON.stringify({
+          access_key: WEB3FORMS_ACCESS_KEY,
+          subject: `🚨 CRITICAL ALERT: Chassis Tamper Lockout on Terminal ${this.getEspIp()}`,
+          from_name: "Smart Access Terminal Interlock",
+          operator_name: currentOperator.name,
+          operator_mobile: currentOperator.mobile,
+          access_purpose: currentOperator.purpose,
+          login_timestamp: currentOperator.loginTime,
+          tamper_timestamp: new Date().toISOString(),
+          strike_count: "5/5",
+          clr_bus_status: "LOW (0V Grounded)",
+          terminal_ip: this.getEspIp(),
+          message: `CRITICAL HARDWARE INTRUSION ALERT:\nTerminal at IP ${this.getEspIp()} has been permanently locked down due to 5 consecutive unauthorized access violations.\n\nOperator Session Details:\nName: ${currentOperator.name}\nMobile/ID: ${currentOperator.mobile}\nPurpose: ${currentOperator.purpose}\nAuthenticated At: ${currentOperator.loginTime}\n\nPhysical /CLR bus line grounded. Technical hardware verification challenge required to clear lockout.`
+        })
+      });
+
+      if (response.ok) {
+        this.log('📩 Dispatch: Security Intrusion Alert sent via Web3Forms API.', 'system');
+      }
+    } catch (err) {
+      this.log(`Web3Forms Dispatch Notice: ${err.message}`, 'warn');
+    }
   }
 
   openSecurityModal() {
     const err = document.getElementById('secErrorMsg');
     if (err) err.style.display = 'none';
 
-    // Reset radio selection
     document.querySelectorAll('input[name="mcqIcAnswer"]').forEach(r => r.checked = false);
 
     const modal = document.getElementById('securityQuestionModal');
@@ -2118,16 +2294,12 @@ class SmartLockApp {
       return;
     }
 
-    // Option B: 74HC04 (Hex Inverter) is the correct answer
     if (selected.value === 'B') {
       this.isTampered = false;
       this.isCooldownActive = false;
       this.strikes = 0;
       this.updatePips();
       this.setKeypadDisabled(false);
-
-      const tamperToggle = document.getElementById('tamperToggle');
-      if (tamperToggle) tamperToggle.checked = false;
 
       const banner = document.getElementById('lockoutBanner');
       const statusMsg = document.getElementById('statusMessage');
@@ -2162,7 +2334,6 @@ class SmartLockApp {
     }
   }
 
-  // Industrial Chassis Tamper Interlock Toggle Handler
   toggleTamper(active) {
     this.isTampered = active;
     const statusMsg = document.getElementById('statusMessage');
@@ -2191,6 +2362,8 @@ class SmartLockApp {
       if (this.isOnline) {
         fetch(`http://${this.getEspIp()}/tamper?active=1`, { method: 'POST' }).catch(() => {});
       }
+
+      this.sendWeb3FormsAlert();
     } else {
       this.setKeypadDisabled(false);
       if (clrStatus) {

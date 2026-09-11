@@ -1,48 +1,22 @@
-# Python
-__pycache__/
-*.py[cod]
-*.pyo
-*.pyd
-.Python
-env/
-venv/
-.venv/
-*.egg-info/
-dist/
-build/
-.eggs/
+cat << 'EOF' > .gitignore
+# Java & Maven Artifacts
+src/
+target/
+.mvn/
+pom.xml
 
-# Node.js
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-*.log
-package-lock.json
-
-# Arduino / PlatformIO
-.pio/
-.pioenvs/
-*.elf
-*.bin
-*.hex
-.build/
-
-# OS Files
-.DS_Store
-Thumbs.db
-desktop.ini
-*.swp
-*~
-
-# IDE / Editors
-.vscode/
+# IDE & Editors
 .idea/
+.vscode/
+*.iml
+.settings/
+.project
+.classpath
 
-# Environment
-.env
-.env.local
-
-# Large demo videos (use Git LFS)
+# Heavy Media & Utilities
 *.mp4
-*.avi
-*.mov
+gen.py
+wr.py
+launch_smartlock.bat
+.DS_Store
+EOF
